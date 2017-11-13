@@ -38,17 +38,24 @@ namespace sjtu {
 
 		private:
 			fnode * p;
+			const deque* owner;
 
 		public:
 			iterator() {
 				p = new fnode();
 			}
 
-			iterator(const T &x)
+			iterator(const T &x, const deque* o)
 			{
 				node *q = new node(x);
 				p = q;
 				q = NULL;
+				owner = o;
+			}
+
+			iterator(const deque* o){
+                owner = o;
+                p = new fnode();
 			}
 
 			~iterator() {}
@@ -111,6 +118,10 @@ namespace sjtu {
 			int operator-(const iterator &rhs) const {
 				if (*this == rhs) return 0;
 
+				if (owner != &rhs.return_owner()){
+                    throw invalid_iterator();
+				}
+
 				iterator tmp = *this;
 				int x = 0;
 
@@ -132,8 +143,6 @@ namespace sjtu {
 						return x;
 					}
 				}
-
-				throw invalid_iterator();
 			}
 
 			bool is_head() {
@@ -276,6 +285,10 @@ namespace sjtu {
                 return *p;
 			}
 
+			const deque& return_owner()const{
+                return * owner;
+            }
+
 		};
 
 		class const_iterator {
@@ -283,6 +296,7 @@ namespace sjtu {
 		private:
 
 			fnode * p;
+			const deque * owner;
 
 		public:
 
@@ -292,21 +306,29 @@ namespace sjtu {
 
 			}
 
-			const_iterator(T &x) {
+			const_iterator(T &x, const deque * o) {
 
 				node *q = new node(x);
 				p = q;
 				q = NULL;
+				owner = o;
+			}
+
+			const_iterator(const deque*o){
+                owner = o;
+                p = new fnode();
 			}
 
 			const_iterator(const const_iterator &other) {
 
 				p = &other.return_node();
+				owner = &other.return_owner();
 			}
 
 			const_iterator(const iterator &other) {
 
 				p = &other.return_node();
+				owner = &other.return_owner();
 			}
 
 			T& operator*() const {
@@ -378,6 +400,10 @@ namespace sjtu {
 
 				if (*this == rhs) return 0;
 
+				if (owner != &rhs.return_owner()){
+                    throw invalid_iterator();
+				}
+
 				const_iterator tmp = *this;
 
 				int x = 0;
@@ -400,8 +426,6 @@ namespace sjtu {
 						return x;
 					}
 				}
-
-				throw invalid_iterator();
             }
 
 			bool is_head() {
@@ -534,6 +558,10 @@ namespace sjtu {
 
                 return *p;
 			}
+
+			const deque& return_owner()const{
+                return *owner;
+			}
 		};
 
 	private:
@@ -542,7 +570,7 @@ namespace sjtu {
 		size_t len;
 
 	public:
-		deque() {
+		deque():head(this), tail(this) {
 			head.return_node().next = &tail.return_node();
 			head.return_node().pre = NULL;
 			tail.return_node().pre = &head.return_node();
@@ -550,7 +578,7 @@ namespace sjtu {
 			len = 0;
 		}
 
-		deque(const deque &other) {
+		deque(const deque &other):head(this), tail(this) {
 			head.return_node().next = &tail.return_node();
 			tail.return_node().pre = &head.return_node();
 			len = 0;
@@ -566,6 +594,8 @@ namespace sjtu {
 
 		~deque() {
 			clear();
+			head.clear();
+			tail.clear();
 		}
 
 		deque &operator=(const deque &other) {
@@ -660,9 +690,9 @@ namespace sjtu {
 
 		iterator insert(iterator pos, const T &value) {
 			//int x = head - pos;
-			iterator tmp(value);
+			iterator tmp(value, this);
 
-			if (pos != tail) int x = pos - head;
+			if (this != &pos.return_owner()) {throw invalid_iterator();}
 
 			tmp.return_node().next = &(pos.return_node());
 			tmp.return_node().pre = &((pos - 1).return_node());
@@ -680,7 +710,7 @@ namespace sjtu {
 
 			if (pos == head || pos == tail) throw invalid_iterator();
 
-			if (pos != tail-1) int x = pos - head;
+			if (this != &pos.return_owner()) {throw invalid_iterator();}
 
 			(pos - 1).return_node().next = &(pos + 1).return_node();
 
